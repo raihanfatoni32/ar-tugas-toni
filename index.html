@@ -3,62 +3,108 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR TEST FINAL</title>
+  <title>AR Final: Chair</title>
   <style>
     body {
       margin: 0;
-      background-color: transparent !important; /* Paksa Bening */
+      background-color: transparent !important;
       overflow: hidden;
     }
-    canvas {
-      display: block;
-    }
-    #status {
+    canvas { display: block; }
+    /* Indikator Status di Layar */
+    #status-badge {
       position: absolute;
-      top: 50%;
+      top: 20px;
       left: 50%;
-      transform: translate(-50%, -50%);
-      color: white;
-      background: black;
-      padding: 10px;
-      font-family: sans-serif;
-      z-index: 999;
+      transform: translateX(-50%);
+      background: rgba(0, 0, 0, 0.7);
+      color: #00ff00;
+      padding: 8px 15px;
+      border-radius: 20px;
+      font-family: monospace;
+      font-size: 12px;
       pointer-events: none;
+      z-index: 100;
     }
   </style>
+  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
 </head>
 <body>
-  
-  <div id="status">MEMUAT SYSTEM...</div>
+
+  <div id="status-badge">MEMUAT MODEL...</div>
 
   <script>
+    let chairModel = null;
+    let placedObjects = [];
+    let isLoaded = false;
+
     function setup() {
-      // Ubah status biar kita tau JS jalan
-      document.getElementById('status').innerText = "SIAP! KLIK TOMBOL AR DI BAWAH";
-      document.getElementById('status').style.top = "10px"; // Pindah ke atas
-      
       createCanvas(windowWidth, windowHeight, WEBGL);
-      
-      // Setup AR
       createARCanvas();
+
+      // LOAD MODEL SECARA ASYNC (Biar layar gak hitam)
+      loadModel('chair.obj', true, 
+        (model) => {
+          chairModel = model;
+          isLoaded = true;
+          document.getElementById('status-badge').innerText = "MODEL SIAP! TAP LAYAR";
+          document.getElementById('status-badge').style.color = "#00ff00"; // Hijau
+        },
+        (err) => {
+          document.getElementById('status-badge').innerText = "GAGAL LOAD MODEL (Cek Nama File)";
+          document.getElementById('status-badge').style.color = "#ff0000"; // Merah
+        }
+      );
     }
 
     function draw() {
-      // LUBANGI CANVAS BIAR KAMERA KELIHATAN
-      clear();
+      clear(); // Transparan
 
-      // Debugging: Kotak Merah Muter
-      push();
-      translate(0, 0, -0.5); // 0.5 meter di depan mata
-      rotateX(frameCount * 0.02);
-      rotateY(frameCount * 0.02);
+      // Cahaya biar kursi kelihatan bagus
+      ambientLight(150);
+      directionalLight(255, 255, 255, 1, 1, -1);
+
+      // --- LOGIKA PENEMPATAN ---
+      // Render semua objek yang sudah diletakkan
+      for (let obj of placedObjects) {
+        push();
+        translate(obj.x, obj.y, obj.z);
+        
+        if (isLoaded && chairModel) {
+          // RENDER KURSI
+          scale(0.05); // Ubah angka ini kalau kursi kegedean/kekecilan
+          rotateX(PI); // Membalik kursi (standar obj)
+          normalMaterial(); // Warna pelangi
+          model(chairModel);
+        } else {
+          // FALLBACK: Kalau model belum siap, tampilkan KOTAK MERAH
+          // Biar lu tau posisi tap-nya dimana
+          fill(255, 0, 0);
+          box(0.1);
+        }
+        pop();
+      }
       
+      // --- KURSOR AR (Opsional) ---
+      // Menampilkan penanda kecil di depan mata biar tau arah kamera
+      push();
+      translate(0, 0, -0.5);
       noStroke();
-      fill(255, 0, 0); // MERAH
-      box(0.1); // 10 cm
+      fill(255, 255, 255, 100);
+      sphere(0.01);
       pop();
+    }
+
+    function mousePressed() {
+      // Logic Tap: Taruh benda di depan kamera
+      if (typeof xr !== 'undefined' && xr.session) {
+        // Taruh 1 meter di depan (-1)
+        let loc = createVector(0, 0, -1); 
+        applyMatrix();
+        placedObjects.push(loc);
+      }
     }
   </script>
 </body>
