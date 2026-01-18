@@ -2,133 +2,95 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR FINAL FIX DOM</title>
+  <title>AR NATIVE UI</title>
   <style>
-    /* PENTING: ID ini akan kita bawa masuk ke AR */
-    body {
-      margin: 0;
-      background-color: transparent !important;
-      overflow: hidden;
-      font-family: sans-serif;
-    }
+    body { margin: 0; background-color: transparent !important; overflow: hidden; }
     canvas { display: block; }
-
-    /* UI YANG AKAN TETAP MUNCUL DI DALAM AR */
-    #ar-overlay {
-      position: absolute;
-      top: 0; left: 0; width: 100%; height: 100%;
-      pointer-events: none; /* Biar tembus pandang sentuhannya */
-      display: flex;
-      flex-direction: column;
-      justify-content: space-between;
-      align-items: center;
-      padding: 20px;
-      box-sizing: border-box;
-      z-index: 9999;
-    }
-
-    #status-text {
-      color: #00ff00; /* Hijau Neon */
-      font-size: 18px;
-      font-weight: bold;
-      text-align: center;
-      background: rgba(0,0,0,0.5);
-      padding: 10px;
-      border-radius: 10px;
-      margin-top: 50px; /* Jarak dari atas */
-    }
-
-    /* LINGKARAN TENGAH (CROSSHAIR) - VERSI HTML */
-    #crosshair {
-      width: 20px; 
-      height: 20px;
-      border: 3px solid yellow;
-      border-radius: 50%;
-      background: rgba(255, 255, 0, 0.3);
-      position: absolute;
-      top: 50%; left: 50%;
-      transform: translate(-50%, -50%);
-    }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
 </head>
 <body>
-
-  <div id="ar-overlay">
-    <div id="status-text">MENUNGGU TOMBOL AR...</div>
-    <div id="crosshair"></div> </div>
-
   <script>
     let chairModel = null;
-    let isARStarted = false;
+    let placedObjects = [];
+    let isAR = false;
+
+    function preload() {
+      // Load model dulu
+      chairModel = loadModel('chair.obj', true);
+    }
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
-
-      // --- KUNCI RAHASIA: DOM OVERLAY ---
-      // Ini perintah biar HTML overlay TETAP MUNCUL di dalam AR
-      createARCanvas({
-        domOverlay: { root: document.body } 
-      });
-
-      // LOAD MODEL
-      loadModel('chair.obj', true, 
-        (model) => {
-          chairModel = model;
-          document.getElementById('status-text').innerText = "MODEL SIAP! KLIK ENTER AR";
-        },
-        (err) => {
-          document.getElementById('status-text').innerText = "MODEL GAGAL (AKAN MUNCUL KOTAK)";
-          document.getElementById('status-text').style.color = "red";
-        }
-      );
+      createARCanvas();
     }
 
     function draw() {
       clear();
-      ambientLight(255);
+      ambientLight(200);
       directionalLight(255, 255, 255, 1, 1, -1);
 
-      // DETEKSI APAKAH AR SUDAH JALAN?
-      // Kalau xr.session aktif, berarti kita sudah masuk mode kamera
+      // Cek apakah sudah masuk mode AR
       if (typeof xr !== 'undefined' && xr.session) {
-        if (!isARStarted) {
-          isARStarted = true;
-          document.getElementById('status-text').innerText = "AR AKTIF! LIHAT DEPAN!";
-        }
-
-        // --- RENDER OBJEK OTOMATIS (HEAD-LOCKED) ---
-        // Objek ini akan selalu melayang 1 meter di depan HP kamu
-        // Gak perlu diklik, dia bakal ngikutin gerakan HP.
+        isAR = true;
         
+        // --- 1. GAMBAR TOMBOL DI DALAM AR (HUD) ---
+        // Kita gambar kotak hijau di bagian bawah pandangan kamera
+        // Ini pengganti tombol HTML yang hilang
         push();
-        translate(0, 0, -1); // 1 Meter depan kamera
+        // Posisi tombol: Sedikit ke bawah (-0.3) dan di depan mata (-0.8)
+        translate(0, 0.3, -0.8); 
         
-        // Animasi Muter Biar Kelihatan
-        rotateY(frameCount * 0.01);
-        
-        // 1. KOTAK MERAH (Test) - Pasti Muncul
-        push();
         noStroke();
-        fill(255, 0, 0, 150); // Merah Transparan
-        box(0.2); // Kotak 20cm
+        fill(0, 255, 0); // HIJAU TERANG
+        plane(0.2, 0.08); // Bentuk Tombol (Papan tipis)
+        
+        // Sayangnya p5.js mode WEBGL agak ribet buat nulis Teks 2D.
+        // Jadi anggap saja "KOTAK HIJAU" di bawah itu adalah tombolnya.
         pop();
 
-        // 2. KURSI (Tugas) - Muncul kalau file sehat
-        if (chairModel) {
+        // --- 2. RETICLE (BIDIKAN TENGAH) ---
+        push();
+        translate(0, 0, -1); // 1 meter depan
+        noFill();
+        stroke(255, 255, 0); // KUNING
+        strokeWeight(3);
+        ellipse(0, 0, 0.05, 0.05);
+        pop();
+
+        // --- 3. RENDER OBJEK ---
+        for (let obj of placedObjects) {
           push();
-          translate(0, -0.2, 0); // Turunin dikit
-          scale(0.05); // Skala kursi
+          translate(obj.x, obj.y, obj.z);
+          scale(0.05); 
           rotateX(PI);
           normalMaterial();
-          model(chairModel);
+          if(chairModel) model(chairModel);
           pop();
         }
-        pop();
-        
+      } else {
+        // Tampilan sebelum masuk AR (Layar Putih biasa)
+        background(255);
+        fill(0);
+        textAlign(CENTER);
+        textSize(20);
+        text("KLIK TOMBOL DI BAWAH UNTUK MULAI AR", 0, 0);
       }
+    }
+
+    // INTERAKSI SENTUH
+    function mousePressed() {
+      if (!isAR) return; // Hiraukan kalau belum masuk AR
+
+      // Kita buat logika sederhana:
+      // Kalau user tap layar DIMANAPUN, kita anggap dia mencet tombol
+      // (Karena di AR susah ngepasin jari ke tombol virtual)
+      
+      // Spawn Objek di posisi bidikan (Reticle)
+      let loc = createVector(0, 0, -1);
+      applyMatrix();
+      placedObjects.push(loc);
     }
   </script>
 </body>
