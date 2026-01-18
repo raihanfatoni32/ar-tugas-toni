@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Sketch - Final</title>
+  <title>AR Sketch</title>
 
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
@@ -25,9 +25,11 @@
     shadow-intensity="1" 
     ar-placement="floor"
     interaction-prompt="none"
-    reveal="manual"> <button slot="ar-button" id="ar-button">
-      <svg id="ar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
-        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm10 4H3V8h18v8z"/>
+    reveal="manual"> 
+
+    <button slot="ar-button" id="ar-button">
+      <svg id="ar-icon" width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path fill-rule="evenodd" clip-rule="evenodd" d="M19.9688 4.5H4.03125C2.08313 4.5 0.5 6.09187 0.5 8.05V15.95C0.5 17.9081 2.08313 19.5 4.03125 19.5H19.9688C21.9169 19.5 23.5 17.9081 23.5 15.95V8.05C23.5 6.09187 21.9169 4.5 19.9688 4.5ZM7.5625 14.5C8.94321 14.5 10.0625 13.3807 10.0625 12C10.0625 10.6193 8.94321 9.5 7.5625 9.5C6.18179 9.5 5.0625 10.6193 5.0625 12C5.0625 13.3807 6.18179 14.5 7.5625 14.5ZM18.9375 12C18.9375 13.3807 17.8182 14.5 16.4375 14.5C15.0568 14.5 13.9375 13.3807 13.9375 12C13.9375 10.6193 15.0568 9.5 16.4375 9.5C17.8182 9.5 18.9375 10.6193 18.9375 12Z" fill="#ED225D"/>
       </svg>
       ENTER AR
     </button>
