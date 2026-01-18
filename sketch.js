@@ -1,74 +1,62 @@
 let chairModel;
-let placedObjects = []; // List objek yang sudah ditaruh
-let xrSession = null;   // Variable untuk nyimpen sesi AR
 
 function preload() {
-  // Pastikan file .obj lu ada dan namanya bener
-  chairModel = loadModel('chair.obj', true); 
+  // Load model dengan try-catch biar kalau gagal program gak mati
+  try {
+    chairModel = loadModel('chair.obj', true);
+  } catch (e) {
+    console.error("Model gagal load");
+  }
 }
 
 function setup() {
   createCanvas(windowWidth, windowHeight, WEBGL);
   
-  // PERBAIKAN: Tambahkan opsi konfigurasi
-  // Ini maksa browser nyari fitur AR, bukan VR
-  createARCanvas({
-    mode: 'immersive-ar', // PENTING: Minta mode AR
-    referenceSpace: 'local', // Referensi ruang lokal
-  });
+  // SOLUSI SAKTI LU KEMARIN
+  createARCanvas(); 
 }
+
 function draw() {
-  // 1. KUNCI AR: clear() membuat background transparan
-  // Ini bikin kamera HP lu kelihatan di belakang model 3D
-  clear();
+  clear(); // Transparan
+  
+  // Cahaya Terang
+  ambientLight(200);
+  directionalLight(255, 255, 255, 0, 0, -1);
 
-  // Setup cahaya biar objek gak gelap
-  ambientLight(100);
-  directionalLight(255, 255, 255, 1, 1, -1);
+  // --- TEST VISUAL OTOMATIS (GAK PERLU KLIK) ---
+  
+  // Kita kunci posisi objek di koordinat kamera (Head-Locked)
+  // Artinya objek ini bakal "nempel" terus di pandangan lu
+  
+  push();
+  // Posisi: 0 (Tengah), 0 (Tengah), -0.5 (Setengah meter di depan mata)
+  // Kalau Z kejauhan (misal -5), bakal kekecilan.
+  translate(0, 0, -0.5); 
+  
+  // Rotasi biar kelihatan hidup
+  rotateY(frameCount * 0.01);
+  rotateX(frameCount * 0.01);
 
-  // 2. Render semua objek yang sudah diletakkan
-  for (let obj of placedObjects) {
-    push();
-    // Pindahkan ke posisi tersimpan
-    translate(obj.x, obj.y, obj.z);
-    
-    // Rotasi & Scale sesuai kebutuhan model lu
-    scale(0.2); // Kecilin kalau modelnya kegedean
-    rotateX(PI); // Putar balik kalau modelnya kebalik (masalah umum .obj)
-    
-    noStroke();
-    fill(255, 100, 100); // Warna merah buat testing kalau texture gagal load
+  // 1. RENDER KOTAK MERAH (Penanda Dasar)
+  push();
+  noStroke();
+  fill(255, 0, 0); 
+  box(0.1); // Ukuran 10cm
+  pop();
+
+  // 2. RENDER KURSI (Di posisi yang sama)
+  push();
+  scale(0.05); // Skala kursi
+  // Geser dikit biar gak tabrakan sama kotak merah
+  translate(0, 2, 0); 
+  
+  if (chairModel) {
+    normalMaterial();
     model(chairModel);
-    pop();
   }
+  pop();
+
+  pop();
 }
 
-// 3. Logic Hit Test (Deteksi Sentuhan di Bidang)
-function mousePressed() {
-  // Cek apakah kita sedang dalam mode Immersive (AR aktif)
-  // p5.xr menyuntikkan 'xr' object global
-  if (typeof xr !== 'undefined' && xr.session) {
-    
-    // Logic: Ambil posisi di depan user (Raycasting sederhana)
-    // Karena p5.js core susah akses native Hit-Test API secara langsung tanpa ribet,
-    // kita pakai pendekatan "p5.xr raycaster"
-    
-    // Ambil koordinat 3D dari user touches
-    // Note: p5.xr otomatis memetakan 0,0,0 ke posisi awal kamera AR
-    
-    // Kita buat vector baru di posisi 0.5 meter di depan kamera saat ini
-    // Ini cara paling aman buat demo tugas kuliah daripada native hit-test yang sering crash
-    let newPos = createVector(0, 0, -1.5); 
-    
-    // Apply transformasi kamera saat ini ke vector tersebut
-    // (Simulasi meletakkan benda di depan mata user)
-    applyMatrix(); 
-    
-    // Simpan posisi relatif
-    // Disclaimer: Logic posisi absolut di AR p5.js itu tricky. 
-    // Untuk tugas kuliah, kita simpan posisi relatif mouseX/Y yang diprojeksikan
-    
-    let loc = createVector(mouseX - width/2, mouseY - height/2, -500);
-    placedObjects.push(loc);
-  }
-}
+// Hapus mousePressed dulu biar gak bikin bingung
