@@ -3,113 +3,38 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Experience</title> <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  
-  <style>
-    /* 1. BACKGROUND PUTIH BERSIH (Khas p5.js) */
-    body { 
-      margin: 0; padding: 0; width: 100vw; height: 100vh; 
-      font-family: sans-serif; 
-      background-color: #FFFFFF; /* Putih Polos */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-    }
-    
-    /* Sembunyikan Model Viewer saat loading biar kayak canvas kosong */
-    model-viewer { 
-      width: 100%; height: 100%; 
-      --poster-color: transparent; 
-      background-color: white; /* Samakan background */
-    }
+  <title>AR Project - Toni</title>
 
-    /* 2. TOMBOL "ENTER AR" ALA P5.XR (TIRUAN SEMPURNA) */
-    #ar-button {
-      position: absolute;
-      /* Posisi biasanya di tengah atau agak bawah */
-      top: 50%; left: 50%; transform: translate(-50%, -50%);
-      
-      background-color: white;
-      color: #D61A5E; /* WARNA PINK MAGENTA KHAS P5.XR */
-      border: 1px solid #e0e0e0;
-      border-radius: 6px;
-      
-      padding: 12px 24px;
-      font-family: 'Roboto', sans-serif;
-      font-size: 16px;
-      font-weight: 500;
-      
-      box-shadow: 0 3px 10px rgba(0,0,0,0.1);
-      cursor: pointer;
-      z-index: 100;
-      
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      transition: all 0.2s ease;
-    }
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
 
-    /* Efek Hover biar halus */
-    #ar-button:hover {
-      background-color: #f9f9f9;
-      box-shadow: 0 5px 15px rgba(0,0,0,0.15);
-    }
-    
-    /* Ikon VR Headset */
-    #ar-icon {
-      width: 24px; 
-      height: 24px; 
-      fill: #D61A5E; /* Pink juga */
-    }
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
-    /* Hilangkan UI default Google yang ganggu (biar makin mirip p5) */
-    .slot-poster { display: none; }
-    
-    /* Instruksi Text (Opsional, gaya console p5) */
-    #loading-text {
-      position: absolute; bottom: 20px; left: 20px;
-      font-family: monospace; color: #aaa; font-size: 12px;
-      pointer-events: none;
-    }
-  </style>
+  <link rel="stylesheet" href="style.css">
+  <script src="sketch.js"></script>
 </head>
 <body>
 
-  <audio id="click-sound" src="mouse-click-290204.mp3" preload="auto"></audio>
+  <audio id="click-sound" src="click.mp3" preload="auto"></audio>
 
   <model-viewer 
-    id="viewer"
+    id="ar-scene"
     src="chair.glb" 
     ar 
     ar-modes="webxr scene-viewer quick-look" 
     camera-controls 
     auto-rotate
-    shadow-intensity="1"
-    shadow-softness="1"
+    shadow-intensity="1" 
     ar-placement="floor"
-    interaction-prompt="none"> <button slot="ar-button" id="ar-button">
+    interaction-prompt="none">
+
+    <button slot="ar-button" id="ar-button">
       <svg id="ar-icon" viewBox="0 0 24 24">
         <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm10 4H3V8h18v8z"/>
       </svg>
       Enter AR
     </button>
-    
+
   </model-viewer>
-  
-  <div id="loading-text">Loading assets... Ready.</div>
-
-  <script>
-    const modelViewer = document.querySelector('#viewer');
-    const sound = document.querySelector('#click-sound');
-
-    // LOGIC AUDIO (Biar tetap dapet nilai fitur suara)
-    modelViewer.addEventListener('click', (event) => {
-      if(sound.readyState >= 2) {
-        sound.currentTime = 0;
-        sound.play();
-      }
-    });
-  </script>
 
 </body>
 </html>
