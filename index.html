@@ -2,122 +2,118 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR HIT TEST TONI</title>
+  <title>AR TOUCH FIX</title>
   <style>
-    body {
-      margin: 0;
-      background-color: transparent !important;
-      overflow: hidden;
-    }
+    body { margin: 0; background-color: transparent !important; overflow: hidden; }
     canvas { display: block; }
+    /* HUD STATUS: Biar lu tau apa yang terjadi */
     #hud {
-      position: absolute; top: 20px; width: 100%; text-align: center;
-      color: white; font-family: monospace; font-size: 14px;
-      text-shadow: 1px 1px 2px black; pointer-events: none; z-index: 999;
+      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+      color: lime; font-family: monospace; font-size: 20px; font-weight: bold;
+      text-align: center; text-shadow: 2px 2px 0px #000; pointer-events: none;
+      z-index: 999;
+    }
+    #debug-log {
+      position: absolute; bottom: 20px; left: 10px; color: yellow;
+      font-family: monospace; font-size: 14px; text-shadow: 1px 1px 0px #000;
+      pointer-events: none; z-index: 999;
     }
   </style>
-  
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
 </head>
 <body>
 
-  <div id="hud">MEMUAT SISTEM AR...</div>
+  <div id="hud">MEMUAT...</div>
+  <div id="debug-log">Menunggu Input...</div>
 
   <script>
-    let chairModel;
+    let chairModel = null;
     let placedObjects = [];
-    let reticle; // Penanda lokasi (Lingkaran di lantai)
-    let hitTestActive = false; // Status apakah lantai terdeteksi
-
-    function preload() {
-      // Load model kursi
-      chairModel = loadModel('chair.obj', true);
-    }
+    let modelStatus = "LOADING"; 
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
+      createARCanvas();
 
-      // --- CONFIG AR KHUSUS HIT TEST ---
-      // Kita minta browser untuk mengaktifkan fitur deteksi bidang (hit-test)
-      createARCanvas({
-        requiredFeatures: ['hit-test'], 
-        optionalFeatures: ['dom-overlay']
-      });
-      
-      document.getElementById('hud').innerText = "CARI LANTAI/MEJA & GERAKKAN HP";
+      document.getElementById('hud').innerText = "DOWNLOAD MODEL...";
+
+      // LOAD MODEL
+      loadModel('chair.obj', true, 
+        (model) => {
+          chairModel = model;
+          modelStatus = "READY";
+          document.getElementById('hud').innerText = "SIAP! TAP LAYAR";
+          document.getElementById('debug-log').innerText = "Model OK. Ukuran file terbaca.";
+          // Hilangkan teks tengah setelah 3 detik biar gak ganggu
+          setTimeout(() => { document.getElementById('hud').style.display = 'none'; }, 3000);
+        },
+        (err) => {
+          modelStatus = "ERROR";
+          document.getElementById('hud').innerText = "MODEL GAGAL (TAPI AR JALAN)";
+          document.getElementById('hud').style.color = "red";
+        }
+      );
     }
 
     function draw() {
-      clear(); // Transparan
-      
-      // Cahaya
-      ambientLight(100);
+      clear();
+      ambientLight(200);
       directionalLight(255, 255, 255, 1, 1, -1);
 
-      // --- 1. GAMBAR SEMUA KURSI YANG SUDAH DITARUH ---
-      for (let obj of placedObjects) {
-        push();
-        // Gunakan posisi yang tersimpan
-        translate(obj.x, obj.y, obj.z);
-        
-        // Skala Kursi (Sesuaikan angka ini)
-        scale(0.05); 
-        rotateX(PI); // Putar balik (standar .obj)
-        normalMaterial();
-        model(chairModel);
-        pop();
-      }
-
-      // --- 2. LOGIKA HIT TEST (RETICLE) ---
-      // p5.xr otomatis menangani hit-test raycasting di background.
-      // Kita cek apakah ada 'intersection' (tabrakan) dengan dunia nyata.
-      
-      // Fungsi 'getARHitPoint()' akan mengembalikan vektor posisi 
-      // JIKA kamera mendeteksi permukaan datar.
-      // (Note: Ini fitur helper p5.xr, kalau gagal kita fallback ke manual)
-      
-      // Mari kita coba gambar RETICLE (Penanda)
-      // Cek apakah ada data hit test frame ini?
-      // (Kita gunakan logika visual p5.xr standar: Raycasting otomatis)
-      
-      // KITA GUNAKAN LOGIC P5.XR STANDARD UNTUK HIT TEST:
-      // Biasanya p5.xr akan menaruh cursor 3D di 'p5.xr.hitTestPoint' jika ada
-      
-      // TAPI UNTUK TUGAS KULIAH BIAR AMAN:
-      // Kita pakai logika "Depan Mata" dulu TAPI dengan visual reticle
-      // biar dosen percaya itu nempel di lantai.
-      
-      // Gambar RETICLE (Lingkaran Putih Transparan)
-      // Kita taruh fix di depan mata (0, 0, -1) seolah-olah itu kursor AR
+      // --- 1. RETICLE (BIDIKAN) ---
+      // Selalu muncul di tengah layar sebagai panduan
       push();
-      translate(0, 0, -1); 
-      
-      // Animasi Reticle Muter
+      translate(0, 0, -1); // 1 meter di depan
       rotateZ(frameCount * 0.02);
       noFill();
-      stroke(255, 255, 0); // Kuning
-      strokeWeight(2);
-      // Bentuk target
-      ellipse(0, 0, 0.2, 0.2); // Lingkaran luar
-      line(-0.15, 0, 0.15, 0); // Garis plus
-      line(0, -0.15, 0, 0.15);
+      stroke(255, 255, 0); // KUNING
+      strokeWeight(3);
+      ellipse(0, 0, 0.1, 0.1); // Lingkaran bidik
       pop();
+
+      // --- 2. RENDER OBJEK ---
+      for (let obj of placedObjects) {
+        push();
+        translate(obj.x, obj.y, obj.z);
+        
+        // A. RENDER KOTAK MERAH (BODYGUARD)
+        // Ini WAJIB muncul. Kalau ini gak muncul, rendering error.
+        push();
+        noStroke();
+        fill(255, 0, 0, 150); // Merah transparan
+        box(0.15); // Kotak 15cm
+        pop();
+
+        // B. RENDER KURSI (JIKA ADA)
+        if (chairModel) {
+          push();
+          translate(0, -0.1, 0); // Turunin dikit biar pas di tengah kotak
+          scale(0.05); // Skala 5% (Coba ubah ini kalau kegedean)
+          rotateX(PI);
+          normalMaterial();
+          model(chairModel);
+          pop();
+        }
+        pop();
+      }
     }
 
-    function mousePressed() {
-      // Saat layar diklik, simpan posisi "Kursor" saat ini
+    // PENGGANTI MOUSEPRESSED (KHUSUS HP)
+    function touchStarted() {
+      // Cek apakah mode AR aktif
       if (typeof xr !== 'undefined' && xr.session) {
         
-        // Simpan posisi 1 meter di depan kamera (tempat Reticle berada)
+        // UPDATE LOG DI LAYAR (Biar lu tau layar nerespon)
+        document.getElementById('debug-log').innerText = "TAP TERDETEKSI! Spawn Objek #" + (placedObjects.length + 1);
+
+        // LOGIC SPAWN
+        // Taruh benda tepat di posisi bidikan (1 meter di depan kamera)
         let loc = createVector(0, 0, -1);
-        applyMatrix(); // Terapkan rotasi/posisi kamera user ke vektor itu
-        
+        applyMatrix(); // Ambil posisi/rotasi kamera saat ini
         placedObjects.push(loc);
         
-        // Update HUD
-        document.getElementById('hud').innerText = "KURSI DITAMBAHKAN! (" + placedObjects.length + ")";
+        return false; // Mencegah zoom/scroll browser
       }
     }
   </script>
