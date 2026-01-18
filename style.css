@@ -1,7 +1,8 @@
-/* RESET */
+/* RESET BASIC */
 body { 
   margin: 0; padding: 0; width: 100vw; height: 100vh; 
-  font-family: sans-serif; /* Font default browser HP biasanya Roboto/San Francisco */
+  /* Gunakan font sistem standar biar mirip native */
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
   background-color: #FFFFFF; 
   overflow: hidden;
 }
@@ -12,10 +13,11 @@ model-viewer {
   background-color: white; 
 }
 
-/* TOMBOL ENTER AR (MIRIP P5.XR) */
+/* STYLING TOMBOL PRESISI */
 #ar-button {
   position: absolute;
-  /* Posisi sedikit di atas tengah (Visual Balance) */
+  
+  /* 1. POSISI: NAIKKAN KE ATAS (Sekitar 40% dari atas layar) */
   top: 40%; 
   left: 50%; 
   transform: translate(-50%, -50%);
@@ -23,46 +25,45 @@ model-viewer {
   background-color: white;
   color: #ED225D; /* Pink P5 */
   
-  /* BORDER LEBIH TEGAS (2.5px) */
+  /* 2. KETEBALAN: BORDER LEBIH TEGAS (2.5px) */
   border: 2.5px solid #ED225D; 
-  border-radius: 4px; /* Sudut sedikit melengkung, tapi kotak */
+  border-radius: 4px; /* Radius sudut kecil */
   
-  /* UKURAN LEBIH BESAR & PADAT */
-  padding: 12px 30px;
-  min-width: 180px; /* Biar tombolnya gak kekecilan */
+  /* 3. UKURAN & FONT: LEBIH BESAR & TEBAL */
+  padding: 12px 28px; /* Padding lebih lega */
+  min-width: 170px;   /* Tombol dijamin lebar */
   
-  /* FONT */
-  font-size: 18px; /* Font agak besar */
-  font-weight: 600; /* Semi-Bold */
-  letter-spacing: 1px; /* Jarak antar huruf */
+  font-size: 17px;    /* Font agak besar */
+  font-weight: 700;   /* BOLD (Penting biar mirip) */
+  letter-spacing: 0.8px;
   
-  /* FLEXBOX BIAR IKON & TEKS RAPI */
+  /* LAYOUT */
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 15px; /* Jarak antara ikon dan teks */
+  gap: 14px; /* Jarak ikon ke teks */
   
   cursor: pointer;
-  box-shadow: none; /* P5XR biasanya flat atau shadow tipis banget */
+  box-shadow: none; /* Flat design, tanpa bayangan */
   z-index: 999;
   
-  /* Matikan highlight biru pas ditap di Android */
-  -webkit-tap-highlight-color: transparent; 
+  /* Hapus highlight biru di Android */
+  -webkit-tap-highlight-color: transparent;
   outline: none;
 }
 
-/* EFEK PENCET */
+/* EFEK KLIK HALUS */
 #ar-button:active {
-  background-color: #fce4ec; /* Pink sangat muda */
+  background-color: #fce4ec; /* Pink muda */
   transform: translate(-50%, -50%) scale(0.98);
 }
 
-/* IKON SVG */
+/* UKURAN IKON */
 #ar-icon {
-  width: 28px; /* Ikon sedikit dibesarkan */
-  height: 28px;
-  fill: #ED225D;
+  width: 26px; /* Ikon sedikit lebih besar */
+  height: 26px;
+  fill: #ED225D; /* Pastikan warnanya pink */
 }
 
 /* HILANGKAN ELEMENT GOOGLE */
-.slot-poster { display: none; }
+.slot-poster, #default-ar-button { display: none; }
