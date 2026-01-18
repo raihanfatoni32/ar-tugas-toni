@@ -3,72 +3,67 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Tugas AR Toni - FINAL FIX</title>
-
+  <title>AR Toni - Safe Mode</title>
   <style>
-    html, body {
+    /* Paksa background transparan total */
+    body {
       margin: 0;
       padding: 0;
       background-color: transparent !important;
-      background: none !important;
       overflow: hidden;
     }
     canvas {
       display: block;
-      outline: none;
     }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.xr@0.4.1/dist/p5xr.min.js"></script>
 </head>
-
 <body>
   <script>
-    let chairModel;
+    let chairModel = null; // Mulai dengan kosong
     let placedObjects = [];
-    let isModelLoaded = false;
-
-    function preload() {
-      // Pastikan nama file .obj lu bener di GitHub!
-      // Kalau file ada di folder root, panggil langsung namanya.
-      try {
-        chairModel = loadModel('chair.obj', true, 
-          () => { console.log("Model Berhasil Load!"); isModelLoaded = true; },
-          () => { console.error("Model GAGAL Load! Cek nama file."); }
-        );
-      } catch (e) {
-        console.error("Error Preload:", e);
-      }
-    }
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
       
-      // KONFIGURASI AR YANG BENAR
-      // Kita pakai createARCanvas langsung biar gak nyasar ke VR
-      createARCanvas(); 
+      // 1. NYALAKAN AR DULUAN (Prioritas Utama)
+      createARCanvas();
+
+      // 2. LOAD MODEL SECARA 'DIAM-DIAM' (Asynchronous)
+      // Ini tidak akan bikin layar hitam kalau gagal/lama
+      loadModel('chair.obj', true, 
+        (model) => {
+          chairModel = model;
+          console.log("Model BERHASIL diload!");
+        },
+        (err) => {
+          console.error("Model GAGAL diload! Cek nama file.");
+          // Jangan panik, kita nanti pakai kotak merah kalau ini gagal
+        }
+      );
     }
 
     function draw() {
-      // WAJIB: Hapus background biar kamera kelihatan
+      // WAJIB: Background transparan
       clear();
 
-      // Cahaya
       ambientLight(150);
       directionalLight(255, 255, 255, 1, 1, -1);
 
-      // --- DEBUG MODE: KOTAK MERAH ---
-      // Ini bakal selalu muncul di depan muka lu sebagai penanda AR jalan
+      // --- INDIKATOR STATUS (HUD) ---
+      // Kalau Model BELUM ada, tampilkan teks loading/kotak merah kecil di pojok
       push();
-      translate(0, 0, -0.5); // 0.5 meter di depan mata
-      rotateX(frameCount * 0.01);
-      rotateY(frameCount * 0.01);
+      translate(0, 0, -0.5); // 0.5 meter depan muka
       
-      // Kotak Merah Transparan dikit biar keren
-      noStroke();
-      fill(255, 0, 0, 150); 
-      box(0.1); 
+      if (!chairModel) {
+        // Kalau model belum ke-load atau error, muncul Kotak Merah Putar
+        // Ini tanda: "AR Jalan, tapi File OBJ Bermasalah/Loading"
+        rotateX(frameCount * 0.05);
+        rotateY(frameCount * 0.05);
+        fill(255, 0, 0); 
+        box(0.05); 
+      }
       pop();
       // -------------------------------
 
@@ -77,27 +72,25 @@
         push();
         translate(obj.x, obj.y, obj.z);
         
-        // SCALE: Mainkan ini kalau kursi kegedean/kekecilan
-        scale(0.05); 
-        rotateX(PI); // Balik kursi
-        
-        if (isModelLoaded) {
+        if (chairModel) {
+          // Kalau model sukses, render kursi
+          scale(0.05); 
+          rotateX(PI);
           normalMaterial();
           model(chairModel);
         } else {
-          // Fallback kalau kursi gagal load: Muncul Bola Hijau
+          // Kalau model gagal/rusak, render KOTAK HIJAU sebagai gantinya
+          // Biar lu tau kalau fungsi tap lu sebenernya jalan
           fill(0, 255, 0);
-          sphere(2); 
+          box(0.1);
         }
         pop();
       }
     }
 
     function mousePressed() {
-      // Logic Tap Layar
-      // Cek apakah AR Session aktif
       if (typeof xr !== 'undefined' && xr.session) {
-        // Taruh benda 1 meter di depan HP saat di-tap
+        // Taruh benda 1 meter di depan HP
         let loc = createVector(0, 0, -1); 
         applyMatrix();
         placedObjects.push(loc);
