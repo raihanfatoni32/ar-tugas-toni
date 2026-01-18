@@ -1,28 +1,108 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Tugas AR Toni</title>
-    
-    <style>
-      html, body {
-        margin: 0;
-        padding: 0;
-        background-color: transparent !important; /* Paksa Bening */
-        overflow: hidden;
-      }
-      canvas {
-        display: block;
-      }
-    </style>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tugas AR Toni - FINAL FIX</title>
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-    
-    <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
-  </head>
-  
-  <body>
-    <script src="sketch.js"></script>
-  </body>
+  <style>
+    html, body {
+      margin: 0;
+      padding: 0;
+      background-color: transparent !important;
+      background: none !important;
+      overflow: hidden;
+    }
+    canvas {
+      display: block;
+      outline: none;
+    }
+  </style>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.xr@0.4.1/dist/p5xr.min.js"></script>
+</head>
+
+<body>
+  <script>
+    let chairModel;
+    let placedObjects = [];
+    let isModelLoaded = false;
+
+    function preload() {
+      // Pastikan nama file .obj lu bener di GitHub!
+      // Kalau file ada di folder root, panggil langsung namanya.
+      try {
+        chairModel = loadModel('chair.obj', true, 
+          () => { console.log("Model Berhasil Load!"); isModelLoaded = true; },
+          () => { console.error("Model GAGAL Load! Cek nama file."); }
+        );
+      } catch (e) {
+        console.error("Error Preload:", e);
+      }
+    }
+
+    function setup() {
+      createCanvas(windowWidth, windowHeight, WEBGL);
+      
+      // KONFIGURASI AR YANG BENAR
+      // Kita pakai createARCanvas langsung biar gak nyasar ke VR
+      createARCanvas(); 
+    }
+
+    function draw() {
+      // WAJIB: Hapus background biar kamera kelihatan
+      clear();
+
+      // Cahaya
+      ambientLight(150);
+      directionalLight(255, 255, 255, 1, 1, -1);
+
+      // --- DEBUG MODE: KOTAK MERAH ---
+      // Ini bakal selalu muncul di depan muka lu sebagai penanda AR jalan
+      push();
+      translate(0, 0, -0.5); // 0.5 meter di depan mata
+      rotateX(frameCount * 0.01);
+      rotateY(frameCount * 0.01);
+      
+      // Kotak Merah Transparan dikit biar keren
+      noStroke();
+      fill(255, 0, 0, 150); 
+      box(0.1); 
+      pop();
+      // -------------------------------
+
+      // RENDER OBJEK YANG DI-TAP
+      for (let obj of placedObjects) {
+        push();
+        translate(obj.x, obj.y, obj.z);
+        
+        // SCALE: Mainkan ini kalau kursi kegedean/kekecilan
+        scale(0.05); 
+        rotateX(PI); // Balik kursi
+        
+        if (isModelLoaded) {
+          normalMaterial();
+          model(chairModel);
+        } else {
+          // Fallback kalau kursi gagal load: Muncul Bola Hijau
+          fill(0, 255, 0);
+          sphere(2); 
+        }
+        pop();
+      }
+    }
+
+    function mousePressed() {
+      // Logic Tap Layar
+      // Cek apakah AR Session aktif
+      if (typeof xr !== 'undefined' && xr.session) {
+        // Taruh benda 1 meter di depan HP saat di-tap
+        let loc = createVector(0, 0, -1); 
+        applyMatrix();
+        placedObjects.push(loc);
+      }
+    }
+  </script>
+</body>
 </html>
