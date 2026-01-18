@@ -1,60 +1,75 @@
-/* RESET BASIC */
+/* RESET */
 body { 
-  margin: 0; 
-  padding: 0; 
-  width: 100vw; 
-  height: 100vh; 
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background-color: #FFFFFF; /* Putih Bersih ala p5 editor */
+  margin: 0; padding: 0; width: 100vw; height: 100vh; 
+  font-family: 'Segoe UI', sans-serif;
+  background-color: #FFFFFF; /* Wajib Putih */
   overflow: hidden;
 }
 
-/* AR VIEWER FULLSCREEN */
 model-viewer { 
-  width: 100%; 
-  height: 100%; 
+  width: 100%; height: 100%; 
   --poster-color: transparent;
-  background-color: white;
+  background-color: white; 
 }
 
-/* TOMBOL "ENTER AR" ALA P5.XR (Styling Pink) */
+/* --- TAMPILAN TOMBOL MENIRU P5.XR --- */
 #ar-button {
   position: absolute;
-  top: 50%; 
-  left: 50%; 
+  top: 50%; left: 50%; 
   transform: translate(-50%, -50%);
   
+  /* Warna Pink Khas p5.js */
+  color: #ED225D; 
   background-color: white;
-  color: #D61A5E; /* Pink Magenta P5 */
-  border: 1px solid #e0e0e0;
-  border-radius: 6px;
   
-  padding: 12px 24px;
-  font-size: 16px;
-  font-weight: 600;
-  letter-spacing: 0.5px;
+  /* Border Kotak dengan Radius Dikit */
+  border: 2px solid #ED225D;
+  border-radius: 4px; 
   
-  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-  cursor: pointer;
-  z-index: 999;
+  padding: 10px 25px;
+  font-size: 14px;
+  font-weight: bold; /* Huruf Tebal */
+  letter-spacing: 1px;
   
+  /* Tata Letak Ikon & Teks */
   display: flex;
   align-items: center;
-  gap: 10px;
-  transition: transform 0.1s ease, box-shadow 0.2s ease;
+  justify-content: center;
+  gap: 12px;
+  
+  cursor: pointer;
+  box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+  z-index: 999;
 }
 
+/* Efek pas dipencet */
 #ar-button:active {
-  transform: translate(-50%, -50%) scale(0.95);
-  background-color: #f5f5f5;
+  background-color: #fce4ec; /* Pink muda banget */
+  transform: translate(-50%, -50%) scale(0.98);
 }
 
-/* IKON TOMBOL */
+/* Ikon SVG di dalam tombol */
 #ar-icon {
-  width: 24px; 
-  height: 24px; 
-  fill: #D61A5E;
+  width: 20px; 
+  height: 20px; 
+  fill: #ED225D; /* Warna Ikon Pink */
 }
 
-/* SEMBUNYIKAN ELEMEN BAWAAN GOOGLE YANG GAK PERLU */
+/* --- FAKE CONSOLE LOG (POJOK KIRI ATAS) --- */
+#p5-console {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  background-color: rgba(0, 0, 0, 0.8); /* Hitam Transparan */
+  color: #00ff00; /* Hijau Hacker */
+  font-family: 'Courier New', monospace;
+  font-size: 12px;
+  padding: 8px 12px;
+  border-radius: 4px;
+  pointer-events: none; /* Biar gak ngehalangin klik */
+  z-index: 1000;
+  min-width: 150px;
+}
+
+/* Sembunyikan loading bar Google yg jelek */
 .slot-poster { display: none; }
