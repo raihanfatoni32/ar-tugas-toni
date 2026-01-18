@@ -2,96 +2,41 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR NATIVE UI</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tugas AR Toni - Google Tech</title>
   <style>
-    body { margin: 0; background-color: transparent !important; overflow: hidden; }
-    canvas { display: block; }
+    /* Reset CSS biar full screen */
+    body { margin: 0; padding: 0; width: 100vw; height: 100vh; }
+    
+    /* Atur Model Viewer biar memenuhi layar */
+    model-viewer {
+      width: 100%;
+      height: 100%;
+      background-color: #404040; /* Background abu-abu pas loading */
+    }
   </style>
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
+  
+  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 </head>
 <body>
-  <script>
-    let chairModel = null;
-    let placedObjects = [];
-    let isAR = false;
 
-    function preload() {
-      // Load model dulu
-      chairModel = loadModel('chair.obj', true);
-    }
+  <model-viewer 
+    src="chair.glb" 
+    alt="Sebuah Astronot 3D"
+    ar 
+    ar-modes="webxr scene-viewer quick-look" 
+    camera-controls 
+    auto-rotate
+    shadow-intensity="1">
+    
+    <button slot="ar-button" style="
+      background-color: white; border-radius: 4px; border: none; 
+      position: absolute; top: 16px; right: 16px; padding: 10px 20px; 
+      font-weight: bold; box-shadow: 0 2px 4px rgba(0,0,0,0.25);">
+      👋 BUKA AR (KLIK SINI)
+    </button>
+    
+  </model-viewer>
 
-    function setup() {
-      createCanvas(windowWidth, windowHeight, WEBGL);
-      createARCanvas();
-    }
-
-    function draw() {
-      clear();
-      ambientLight(200);
-      directionalLight(255, 255, 255, 1, 1, -1);
-
-      // Cek apakah sudah masuk mode AR
-      if (typeof xr !== 'undefined' && xr.session) {
-        isAR = true;
-        
-        // --- 1. GAMBAR TOMBOL DI DALAM AR (HUD) ---
-        // Kita gambar kotak hijau di bagian bawah pandangan kamera
-        // Ini pengganti tombol HTML yang hilang
-        push();
-        // Posisi tombol: Sedikit ke bawah (-0.3) dan di depan mata (-0.8)
-        translate(0, 0.3, -0.8); 
-        
-        noStroke();
-        fill(0, 255, 0); // HIJAU TERANG
-        plane(0.2, 0.08); // Bentuk Tombol (Papan tipis)
-        
-        // Sayangnya p5.js mode WEBGL agak ribet buat nulis Teks 2D.
-        // Jadi anggap saja "KOTAK HIJAU" di bawah itu adalah tombolnya.
-        pop();
-
-        // --- 2. RETICLE (BIDIKAN TENGAH) ---
-        push();
-        translate(0, 0, -1); // 1 meter depan
-        noFill();
-        stroke(255, 255, 0); // KUNING
-        strokeWeight(3);
-        ellipse(0, 0, 0.05, 0.05);
-        pop();
-
-        // --- 3. RENDER OBJEK ---
-        for (let obj of placedObjects) {
-          push();
-          translate(obj.x, obj.y, obj.z);
-          scale(0.05); 
-          rotateX(PI);
-          normalMaterial();
-          if(chairModel) model(chairModel);
-          pop();
-        }
-      } else {
-        // Tampilan sebelum masuk AR (Layar Putih biasa)
-        background(255);
-        fill(0);
-        textAlign(CENTER);
-        textSize(20);
-        text("KLIK TOMBOL DI BAWAH UNTUK MULAI AR", 0, 0);
-      }
-    }
-
-    // INTERAKSI SENTUH
-    function mousePressed() {
-      if (!isAR) return; // Hiraukan kalau belum masuk AR
-
-      // Kita buat logika sederhana:
-      // Kalau user tap layar DIMANAPUN, kita anggap dia mencet tombol
-      // (Karena di AR susah ngepasin jari ke tombol virtual)
-      
-      // Spawn Objek di posisi bidikan (Reticle)
-      let loc = createVector(0, 0, -1);
-      applyMatrix();
-      placedObjects.push(loc);
-    }
-  </script>
 </body>
 </html>
