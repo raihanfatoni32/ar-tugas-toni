@@ -3,7 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>AR Sketch</title> <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+  <title>AR Sketch - Final</title>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
 
   <link rel="stylesheet" href="style.css">
@@ -12,11 +14,6 @@
 <body>
 
   <audio id="click-sound" src="click.mp3" preload="auto"></audio>
-
-  <div id="p5-console">
-    <span style="color: #00ff00;">> p5.js init... OK</span><br>
-    <span style="color: #ffff00;">> Loading assets...</span>
-  </div>
 
   <model-viewer 
     id="ar-scene"
@@ -27,11 +24,10 @@
     auto-rotate
     shadow-intensity="1" 
     ar-placement="floor"
-    interaction-prompt="none">
-
-    <button slot="ar-button" id="ar-button">
-      <svg id="ar-icon" viewBox="0 0 24 24">
-        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+    interaction-prompt="none"
+    reveal="manual"> <button slot="ar-button" id="ar-button">
+      <svg id="ar-icon" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+        <path d="M21 6H3c-1.1 0-2 .9-2 2v8c0 1.1.9 2 2 2h18c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2zm-10 6c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm10 4H3V8h18v8z"/>
       </svg>
       ENTER AR
     </button>
