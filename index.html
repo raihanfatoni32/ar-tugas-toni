@@ -2,94 +2,132 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR RAW TOUCH</title>
+  <title>AR FINAL FIX DOM</title>
   <style>
-    body { margin: 0; background-color: transparent !important; overflow: hidden; }
-    canvas { display: block; }
-    
-    /* HUD STATUS BESAR */
-    #hud {
-      position: absolute; top: 20px; left: 0; width: 100%;
-      text-align: center; color: lime; font-family: monospace; 
-      font-size: 20px; font-weight: bold;
-      text-shadow: 2px 2px 0px black; pointer-events: none; z-index: 999;
+    /* PENTING: ID ini akan kita bawa masuk ke AR */
+    body {
+      margin: 0;
+      background-color: transparent !important;
+      overflow: hidden;
+      font-family: sans-serif;
     }
-    
-    /* CROSSHAIR TENGAH */
+    canvas { display: block; }
+
+    /* UI YANG AKAN TETAP MUNCUL DI DALAM AR */
+    #ar-overlay {
+      position: absolute;
+      top: 0; left: 0; width: 100%; height: 100%;
+      pointer-events: none; /* Biar tembus pandang sentuhannya */
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      align-items: center;
+      padding: 20px;
+      box-sizing: border-box;
+      z-index: 9999;
+    }
+
+    #status-text {
+      color: #00ff00; /* Hijau Neon */
+      font-size: 18px;
+      font-weight: bold;
+      text-align: center;
+      background: rgba(0,0,0,0.5);
+      padding: 10px;
+      border-radius: 10px;
+      margin-top: 50px; /* Jarak dari atas */
+    }
+
+    /* LINGKARAN TENGAH (CROSSHAIR) - VERSI HTML */
     #crosshair {
-      position: absolute; top: 50%; left: 50%;
-      width: 20px; height: 20px;
-      border: 2px solid yellow; border-radius: 50%;
+      width: 20px; 
+      height: 20px;
+      border: 3px solid yellow;
+      border-radius: 50%;
+      background: rgba(255, 255, 0, 0.3);
+      position: absolute;
+      top: 50%; left: 50%;
       transform: translate(-50%, -50%);
-      pointer-events: none; z-index: 999;
     }
   </style>
+
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
 </head>
 <body>
 
-  <div id="hud">TAP LAYAR DIMANA AJA!</div>
-  <div id="crosshair"></div>
+  <div id="ar-overlay">
+    <div id="status-text">MENUNGGU TOMBOL AR...</div>
+    <div id="crosshair"></div> </div>
 
   <script>
-    let placedObjects = [];
-    let cooldownTimer = 0; // Supaya sekali tap gak keluar 100 kotak
+    let chairModel = null;
+    let isARStarted = false;
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
-      createARCanvas();
+
+      // --- KUNCI RAHASIA: DOM OVERLAY ---
+      // Ini perintah biar HTML overlay TETAP MUNCUL di dalam AR
+      createARCanvas({
+        domOverlay: { root: document.body } 
+      });
+
+      // LOAD MODEL
+      loadModel('chair.obj', true, 
+        (model) => {
+          chairModel = model;
+          document.getElementById('status-text').innerText = "MODEL SIAP! KLIK ENTER AR";
+        },
+        (err) => {
+          document.getElementById('status-text').innerText = "MODEL GAGAL (AKAN MUNCUL KOTAK)";
+          document.getElementById('status-text').style.color = "red";
+        }
+      );
     }
 
     function draw() {
       clear();
-      ambientLight(255); // Cahaya Full Terang
+      ambientLight(255);
+      directionalLight(255, 255, 255, 1, 1, -1);
 
-      // --- LOGIKA DETEKSI SENTUHAN (POLLING) ---
-      // touches adalah array bawaan p5 yang isinya daftar jari di layar.
-      // Kalau length > 0 berarti ada jari nempel.
-      
-      if (touches.length > 0) {
-        // Cek Cooldown (biar gak spamming)
-        if (cooldownTimer === 0) {
-          spawnObject();
-          cooldownTimer = 30; // Delay 30 frame (setengah detik) baru boleh tap lagi
-        }
-      }
-
-      // Kurangi cooldown setiap frame
-      if (cooldownTimer > 0) {
-        cooldownTimer--;
-      }
-
-      // --- RENDER OBJEK ---
-      for (let obj of placedObjects) {
-        push();
-        translate(obj.x, obj.y, obj.z);
-        
-        // Animasi Muter
-        rotateX(frameCount * 0.02);
-        rotateY(frameCount * 0.02);
-        
-        // MATERIAL PELANGI & KOTAK BESAR
-        normalMaterial(); 
-        box(0.15); // 15 cm
-        pop();
-      }
-    }
-
-    function spawnObject() {
-      // Pastikan mode AR aktif
+      // DETEKSI APAKAH AR SUDAH JALAN?
+      // Kalau xr.session aktif, berarti kita sudah masuk mode kamera
       if (typeof xr !== 'undefined' && xr.session) {
-        // Taruh di posisi bidikan (0.5 meter depan kamera)
-        // Kita majuin dikit (-0.5) biar pas di depan muka
-        let loc = createVector(0, 0, -0.5);
-        applyMatrix();
-        placedObjects.push(loc);
+        if (!isARStarted) {
+          isARStarted = true;
+          document.getElementById('status-text').innerText = "AR AKTIF! LIHAT DEPAN!";
+        }
+
+        // --- RENDER OBJEK OTOMATIS (HEAD-LOCKED) ---
+        // Objek ini akan selalu melayang 1 meter di depan HP kamu
+        // Gak perlu diklik, dia bakal ngikutin gerakan HP.
         
-        // Update HUD Visual
-        document.getElementById('hud').innerText = "SUKSES! TOTAL: " + placedObjects.length;
-        document.getElementById('hud').style.color = "yellow";
+        push();
+        translate(0, 0, -1); // 1 Meter depan kamera
+        
+        // Animasi Muter Biar Kelihatan
+        rotateY(frameCount * 0.01);
+        
+        // 1. KOTAK MERAH (Test) - Pasti Muncul
+        push();
+        noStroke();
+        fill(255, 0, 0, 150); // Merah Transparan
+        box(0.2); // Kotak 20cm
+        pop();
+
+        // 2. KURSI (Tugas) - Muncul kalau file sehat
+        if (chairModel) {
+          push();
+          translate(0, -0.2, 0); // Turunin dikit
+          scale(0.05); // Skala kursi
+          rotateX(PI);
+          normalMaterial();
+          model(chairModel);
+          pop();
+        }
+        pop();
+        
       }
     }
   </script>
