@@ -2,24 +2,26 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR BOX ONLY</title>
+  <title>AR RAW TOUCH</title>
   <style>
     body { margin: 0; background-color: transparent !important; overflow: hidden; }
     canvas { display: block; }
     
-    /* TOMBOL HIJAU */
-    #btn-place {
-      position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
-      padding: 15px 40px; background-color: #00ff00; color: black;
-      font-weight: bold; font-size: 18px; border-radius: 50px; border: 3px solid white;
-      z-index: 9999;
+    /* HUD STATUS BESAR */
+    #hud {
+      position: absolute; top: 20px; left: 0; width: 100%;
+      text-align: center; color: lime; font-family: monospace; 
+      font-size: 20px; font-weight: bold;
+      text-shadow: 2px 2px 0px black; pointer-events: none; z-index: 999;
     }
     
-    /* COUNTER DEBUG (PENTING) */
-    #debug-count {
-      position: absolute; top: 20px; left: 20px;
-      color: yellow; font-family: monospace; font-size: 24px; font-weight: bold;
-      text-shadow: 2px 2px 0px black; pointer-events: none; z-index: 9999;
+    /* CROSSHAIR TENGAH */
+    #crosshair {
+      position: absolute; top: 50%; left: 50%;
+      width: 20px; height: 20px;
+      border: 2px solid yellow; border-radius: 50%;
+      transform: translate(-50%, -50%);
+      pointer-events: none; z-index: 999;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -27,69 +29,67 @@
 </head>
 <body>
 
-  <div id="debug-count">JUMLAH OBJEK: 0</div>
-  <button id="btn-place">TARUH KOTAK</button>
+  <div id="hud">TAP LAYAR DIMANA AJA!</div>
+  <div id="crosshair"></div>
 
   <script>
     let placedObjects = [];
+    let cooldownTimer = 0; // Supaya sekali tap gak keluar 100 kotak
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
       createARCanvas();
-      
-      // Setup Tombol
-      const btn = document.getElementById('btn-place');
-      btn.addEventListener('touchstart', (e) => { e.preventDefault(); spawnObject(); });
-      btn.addEventListener('click', (e) => { spawnObject(); });
-    }
-
-    function spawnObject() {
-      if (typeof xr !== 'undefined' && xr.session) {
-        // Taruh di -1 meter (depan mata)
-        let loc = createVector(0, 0, -1);
-        placedObjects.push(loc);
-        
-        // Update teks tombol & counter
-        document.getElementById('btn-place').innerText = "OK!";
-        setTimeout(() => document.getElementById('btn-place').innerText = "TARUH KOTAK", 500);
-        
-        // Update Counter di Layar
-        document.getElementById('debug-count').innerText = "JUMLAH OBJEK: " + placedObjects.length;
-      }
     }
 
     function draw() {
       clear();
-      ambientLight(200);
-      directionalLight(255, 255, 255, 1, 1, -1);
+      ambientLight(255); // Cahaya Full Terang
 
-      // 1. RETICLE (LINGKARAN KUNING)
-      push();
-      translate(0, 0, -1);
-      rotateZ(frameCount * 0.05);
-      noFill();
-      stroke(255, 255, 0);
-      strokeWeight(4);
-      ellipse(0, 0, 0.1, 0.1);
-      pop();
+      // --- LOGIKA DETEKSI SENTUHAN (POLLING) ---
+      // touches adalah array bawaan p5 yang isinya daftar jari di layar.
+      // Kalau length > 0 berarti ada jari nempel.
+      
+      if (touches.length > 0) {
+        // Cek Cooldown (biar gak spamming)
+        if (cooldownTimer === 0) {
+          spawnObject();
+          cooldownTimer = 30; // Delay 30 frame (setengah detik) baru boleh tap lagi
+        }
+      }
 
-      // 2. RENDER OBJEK (KOTAK PELANGI)
-      for (let i = 0; i < placedObjects.length; i++) {
-        let obj = placedObjects[i];
-        
+      // Kurangi cooldown setiap frame
+      if (cooldownTimer > 0) {
+        cooldownTimer--;
+      }
+
+      // --- RENDER OBJEK ---
+      for (let obj of placedObjects) {
         push();
         translate(obj.x, obj.y, obj.z);
         
-        // ROTASI: Biar kelihatan 3D-nya
+        // Animasi Muter
         rotateX(frameCount * 0.02);
         rotateY(frameCount * 0.02);
         
-        // MATERIAL PELANGI (Paling gampang dilihat)
+        // MATERIAL PELANGI & KOTAK BESAR
         normalMaterial(); 
-        
-        // UKURAN BESAR (20cm)
-        box(0.2); 
+        box(0.15); // 15 cm
         pop();
+      }
+    }
+
+    function spawnObject() {
+      // Pastikan mode AR aktif
+      if (typeof xr !== 'undefined' && xr.session) {
+        // Taruh di posisi bidikan (0.5 meter depan kamera)
+        // Kita majuin dikit (-0.5) biar pas di depan muka
+        let loc = createVector(0, 0, -0.5);
+        applyMatrix();
+        placedObjects.push(loc);
+        
+        // Update HUD Visual
+        document.getElementById('hud').innerText = "SUKSES! TOTAL: " + placedObjects.length;
+        document.getElementById('hud').style.color = "yellow";
       }
     }
   </script>
