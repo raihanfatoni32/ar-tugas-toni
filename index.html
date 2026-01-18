@@ -2,21 +2,37 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR TOUCH FIX</title>
+  <title>AR BUTTON MODE</title>
   <style>
     body { margin: 0; background-color: transparent !important; overflow: hidden; }
     canvas { display: block; }
-    /* HUD STATUS: Biar lu tau apa yang terjadi */
-    #hud {
-      position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-      color: lime; font-family: monospace; font-size: 20px; font-weight: bold;
-      text-align: center; text-shadow: 2px 2px 0px #000; pointer-events: none;
-      z-index: 999;
+    
+    /* TOMBOL EKSEKUSI (ANTI MACET) */
+    #btn-place {
+      position: absolute;
+      bottom: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      padding: 15px 40px;
+      background-color: #00ff00; /* Hijau Terang */
+      color: black;
+      font-family: sans-serif;
+      font-weight: bold;
+      font-size: 18px;
+      border: 3px solid white;
+      border-radius: 50px;
+      z-index: 9999; /* Wajib di atas segalanya */
+      box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
     }
-    #debug-log {
-      position: absolute; bottom: 20px; left: 10px; color: yellow;
-      font-family: monospace; font-size: 14px; text-shadow: 1px 1px 0px #000;
-      pointer-events: none; z-index: 999;
+    #btn-place:active {
+      background-color: #00aa00;
+      transform: translateX(-50%) scale(0.95);
+    }
+
+    #hud {
+      position: absolute; top: 20px; width: 100%; text-align: center;
+      color: white; font-family: monospace; font-size: 16px; 
+      text-shadow: 1px 1px 2px black; pointer-events: none; z-index: 998;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -24,13 +40,13 @@
 </head>
 <body>
 
-  <div id="hud">MEMUAT...</div>
-  <div id="debug-log">Menunggu Input...</div>
+  <div id="hud">MEMUAT SYSTEM...</div>
+  
+  <button id="btn-place">TARUH KURSI</button>
 
   <script>
     let chairModel = null;
     let placedObjects = [];
-    let modelStatus = "LOADING"; 
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
@@ -42,18 +58,44 @@
       loadModel('chair.obj', true, 
         (model) => {
           chairModel = model;
-          modelStatus = "READY";
-          document.getElementById('hud').innerText = "SIAP! TAP LAYAR";
-          document.getElementById('debug-log').innerText = "Model OK. Ukuran file terbaca.";
-          // Hilangkan teks tengah setelah 3 detik biar gak ganggu
-          setTimeout(() => { document.getElementById('hud').style.display = 'none'; }, 3000);
+          document.getElementById('hud').innerText = "MODEL SIAP! BIDIK & TEKAN TOMBOL HIJAU";
+          document.getElementById('hud').style.color = "#00FF00";
         },
         (err) => {
-          modelStatus = "ERROR";
-          document.getElementById('hud').innerText = "MODEL GAGAL (TAPI AR JALAN)";
+          document.getElementById('hud').innerText = "MODEL GAGAL (AKAN MUNCUL KOTAK MERAH)";
           document.getElementById('hud').style.color = "red";
         }
       );
+
+      // --- LOGIKA TOMBOL (PASTI JALAN) ---
+      // Kita pakai event listener HTML biasa, bukan p5.js
+      const btn = document.getElementById('btn-place');
+      
+      // Support sentuhan HP
+      btn.addEventListener('touchstart', (e) => {
+        e.preventDefault(); // Mencegah zoom/scroll
+        spawnObject();
+      });
+      
+      // Support klik mouse (untuk testing laptop)
+      btn.addEventListener('click', (e) => {
+        spawnObject();
+      });
+    }
+
+    // Fungsi Terpisah buat Spawn
+    function spawnObject() {
+      // Cek AR Session
+      if (typeof xr !== 'undefined' && xr.session) {
+        // Taruh benda 1 meter di depan kamera (sesuai bidikan reticle)
+        let loc = createVector(0, 0, -1);
+        applyMatrix();
+        placedObjects.push(loc);
+        
+        // Ubah teks tombol sebentar biar tau kepencet
+        document.getElementById('btn-place').innerText = "OK!";
+        setTimeout(() => document.getElementById('btn-place').innerText = "TARUH KURSI", 500);
+      }
     }
 
     function draw() {
@@ -61,59 +103,41 @@
       ambientLight(200);
       directionalLight(255, 255, 255, 1, 1, -1);
 
-      // --- 1. RETICLE (BIDIKAN) ---
-      // Selalu muncul di tengah layar sebagai panduan
+      // 1. RETICLE KUNING (BIDIKAN)
       push();
-      translate(0, 0, -1); // 1 meter di depan
-      rotateZ(frameCount * 0.02);
+      translate(0, 0, -1);
+      rotateZ(frameCount * 0.05);
       noFill();
-      stroke(255, 255, 0); // KUNING
+      stroke(255, 255, 0);
       strokeWeight(3);
-      ellipse(0, 0, 0.1, 0.1); // Lingkaran bidik
+      ellipse(0, 0, 0.1, 0.1);
+      line(-0.1, 0, 0.1, 0);
+      line(0, -0.1, 0, 0.1);
       pop();
 
-      // --- 2. RENDER OBJEK ---
+      // 2. RENDER OBJEK
       for (let obj of placedObjects) {
         push();
         translate(obj.x, obj.y, obj.z);
         
-        // A. RENDER KOTAK MERAH (BODYGUARD)
-        // Ini WAJIB muncul. Kalau ini gak muncul, rendering error.
+        // Render Kotak Merah (Jaga-jaga kalau kursi error)
         push();
         noStroke();
-        fill(255, 0, 0, 150); // Merah transparan
-        box(0.15); // Kotak 15cm
+        fill(255, 0, 0, 100); 
+        box(0.1); 
         pop();
 
-        // B. RENDER KURSI (JIKA ADA)
+        // Render Kursi
         if (chairModel) {
           push();
-          translate(0, -0.1, 0); // Turunin dikit biar pas di tengah kotak
-          scale(0.05); // Skala 5% (Coba ubah ini kalau kegedean)
+          translate(0, -0.05, 0); 
+          scale(0.05); // Skala
           rotateX(PI);
           normalMaterial();
           model(chairModel);
           pop();
         }
         pop();
-      }
-    }
-
-    // PENGGANTI MOUSEPRESSED (KHUSUS HP)
-    function touchStarted() {
-      // Cek apakah mode AR aktif
-      if (typeof xr !== 'undefined' && xr.session) {
-        
-        // UPDATE LOG DI LAYAR (Biar lu tau layar nerespon)
-        document.getElementById('debug-log').innerText = "TAP TERDETEKSI! Spawn Objek #" + (placedObjects.length + 1);
-
-        // LOGIC SPAWN
-        // Taruh benda tepat di posisi bidikan (1 meter di depan kamera)
-        let loc = createVector(0, 0, -1);
-        applyMatrix(); // Ambil posisi/rotasi kamera saat ini
-        placedObjects.push(loc);
-        
-        return false; // Mencegah zoom/scroll browser
       }
     }
   </script>
