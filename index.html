@@ -2,37 +2,24 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>AR BUTTON MODE</title>
+  <title>AR BOX ONLY</title>
   <style>
     body { margin: 0; background-color: transparent !important; overflow: hidden; }
     canvas { display: block; }
     
-    /* TOMBOL EKSEKUSI (ANTI MACET) */
+    /* TOMBOL HIJAU */
     #btn-place {
-      position: absolute;
-      bottom: 50px;
-      left: 50%;
-      transform: translateX(-50%);
-      padding: 15px 40px;
-      background-color: #00ff00; /* Hijau Terang */
-      color: black;
-      font-family: sans-serif;
-      font-weight: bold;
-      font-size: 18px;
-      border: 3px solid white;
-      border-radius: 50px;
-      z-index: 9999; /* Wajib di atas segalanya */
-      box-shadow: 0px 0px 10px rgba(0,0,0,0.5);
+      position: absolute; bottom: 50px; left: 50%; transform: translateX(-50%);
+      padding: 15px 40px; background-color: #00ff00; color: black;
+      font-weight: bold; font-size: 18px; border-radius: 50px; border: 3px solid white;
+      z-index: 9999;
     }
-    #btn-place:active {
-      background-color: #00aa00;
-      transform: translateX(-50%) scale(0.95);
-    }
-
-    #hud {
-      position: absolute; top: 20px; width: 100%; text-align: center;
-      color: white; font-family: monospace; font-size: 16px; 
-      text-shadow: 1px 1px 2px black; pointer-events: none; z-index: 998;
+    
+    /* COUNTER DEBUG (PENTING) */
+    #debug-count {
+      position: absolute; top: 20px; left: 20px;
+      color: yellow; font-family: monospace; font-size: 24px; font-weight: bold;
+      text-shadow: 2px 2px 0px black; pointer-events: none; z-index: 9999;
     }
   </style>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
@@ -40,61 +27,34 @@
 </head>
 <body>
 
-  <div id="hud">MEMUAT SYSTEM...</div>
-  
-  <button id="btn-place">TARUH KURSI</button>
+  <div id="debug-count">JUMLAH OBJEK: 0</div>
+  <button id="btn-place">TARUH KOTAK</button>
 
   <script>
-    let chairModel = null;
     let placedObjects = [];
 
     function setup() {
       createCanvas(windowWidth, windowHeight, WEBGL);
       createARCanvas();
-
-      document.getElementById('hud').innerText = "DOWNLOAD MODEL...";
-
-      // LOAD MODEL
-      loadModel('chair.obj', true, 
-        (model) => {
-          chairModel = model;
-          document.getElementById('hud').innerText = "MODEL SIAP! BIDIK & TEKAN TOMBOL HIJAU";
-          document.getElementById('hud').style.color = "#00FF00";
-        },
-        (err) => {
-          document.getElementById('hud').innerText = "MODEL GAGAL (AKAN MUNCUL KOTAK MERAH)";
-          document.getElementById('hud').style.color = "red";
-        }
-      );
-
-      // --- LOGIKA TOMBOL (PASTI JALAN) ---
-      // Kita pakai event listener HTML biasa, bukan p5.js
+      
+      // Setup Tombol
       const btn = document.getElementById('btn-place');
-      
-      // Support sentuhan HP
-      btn.addEventListener('touchstart', (e) => {
-        e.preventDefault(); // Mencegah zoom/scroll
-        spawnObject();
-      });
-      
-      // Support klik mouse (untuk testing laptop)
-      btn.addEventListener('click', (e) => {
-        spawnObject();
-      });
+      btn.addEventListener('touchstart', (e) => { e.preventDefault(); spawnObject(); });
+      btn.addEventListener('click', (e) => { spawnObject(); });
     }
 
-    // Fungsi Terpisah buat Spawn
     function spawnObject() {
-      // Cek AR Session
       if (typeof xr !== 'undefined' && xr.session) {
-        // Taruh benda 1 meter di depan kamera (sesuai bidikan reticle)
+        // Taruh di -1 meter (depan mata)
         let loc = createVector(0, 0, -1);
-        applyMatrix();
         placedObjects.push(loc);
         
-        // Ubah teks tombol sebentar biar tau kepencet
+        // Update teks tombol & counter
         document.getElementById('btn-place').innerText = "OK!";
-        setTimeout(() => document.getElementById('btn-place').innerText = "TARUH KURSI", 500);
+        setTimeout(() => document.getElementById('btn-place').innerText = "TARUH KOTAK", 500);
+        
+        // Update Counter di Layar
+        document.getElementById('debug-count').innerText = "JUMLAH OBJEK: " + placedObjects.length;
       }
     }
 
@@ -103,40 +63,32 @@
       ambientLight(200);
       directionalLight(255, 255, 255, 1, 1, -1);
 
-      // 1. RETICLE KUNING (BIDIKAN)
+      // 1. RETICLE (LINGKARAN KUNING)
       push();
       translate(0, 0, -1);
       rotateZ(frameCount * 0.05);
       noFill();
       stroke(255, 255, 0);
-      strokeWeight(3);
+      strokeWeight(4);
       ellipse(0, 0, 0.1, 0.1);
-      line(-0.1, 0, 0.1, 0);
-      line(0, -0.1, 0, 0.1);
       pop();
 
-      // 2. RENDER OBJEK
-      for (let obj of placedObjects) {
+      // 2. RENDER OBJEK (KOTAK PELANGI)
+      for (let i = 0; i < placedObjects.length; i++) {
+        let obj = placedObjects[i];
+        
         push();
         translate(obj.x, obj.y, obj.z);
         
-        // Render Kotak Merah (Jaga-jaga kalau kursi error)
-        push();
-        noStroke();
-        fill(255, 0, 0, 100); 
-        box(0.1); 
-        pop();
-
-        // Render Kursi
-        if (chairModel) {
-          push();
-          translate(0, -0.05, 0); 
-          scale(0.05); // Skala
-          rotateX(PI);
-          normalMaterial();
-          model(chairModel);
-          pop();
-        }
+        // ROTASI: Biar kelihatan 3D-nya
+        rotateX(frameCount * 0.02);
+        rotateY(frameCount * 0.02);
+        
+        // MATERIAL PELANGI (Paling gampang dilihat)
+        normalMaterial(); 
+        
+        // UKURAN BESAR (20cm)
+        box(0.2); 
         pop();
       }
     }
