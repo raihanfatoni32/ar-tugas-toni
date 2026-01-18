@@ -3,127 +3,62 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>DIAGNOSTIC MODE</title>
+  <title>AR TEST FINAL</title>
   <style>
     body {
       margin: 0;
-      background-color: transparent !important;
-      font-family: monospace;
+      background-color: transparent !important; /* Paksa Bening */
       overflow: hidden;
     }
-    /* Kotak Laporan Status di Layar */
-    #debug-console {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: rgba(0, 0, 0, 0.8);
-      color: #0f0; /* Tulisan Hijau Hacker */
-      padding: 10px;
-      border-radius: 5px;
-      font-size: 14px;
-      z-index: 9999;
-      max-width: 80%;
-      pointer-events: none; /* Biar gak ganggu sentuhan */
+    canvas {
+      display: block;
     }
-    canvas { display: block; }
+    #status {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      color: white;
+      background: black;
+      padding: 10px;
+      font-family: sans-serif;
+      z-index: 999;
+      pointer-events: none;
+    }
   </style>
-
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/p5.xr@0.4.1/dist/p5xr.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/p5.xr@latest/dist/p5xr.min.js"></script>
 </head>
 <body>
-  <div id="debug-console">Menunggu System...</div>
+  
+  <div id="status">MEMUAT SYSTEM...</div>
 
   <script>
-    // Fungsi untuk update status di layar
-    function log(msg) {
-      document.getElementById('debug-console').innerText += '\n> ' + msg;
-      console.log(msg);
-    }
-
-    // Tangkap Error Browser (Kalau crash)
-    window.onerror = function(message, source, lineno, colno, error) {
-      log("ERROR FATAL: " + message);
-    };
-
-    let chairModel = null;
-    let placedObjects = [];
-
     function setup() {
-      log("Setup dimulai...");
+      // Ubah status biar kita tau JS jalan
+      document.getElementById('status').innerText = "SIAP! KLIK TOMBOL AR DI BAWAH";
+      document.getElementById('status').style.top = "10px"; // Pindah ke atas
       
-      try {
-        createCanvas(windowWidth, windowHeight, WEBGL);
-        log("Canvas WebGL dibuat.");
-        
-        createARCanvas();
-        log("Tombol AR dibuat. SILAKAN KLIK TOMBOL!");
-
-        // Load Model dengan Hati-hati
-        log("Mencoba download chair.obj...");
-        loadModel('chair.obj', true, 
-          (model) => {
-            chairModel = model;
-            log("SUKSES: Model berhasil di-load!");
-          },
-          (err) => {
-            log("GAGAL: Model tidak ketemu/rusak.");
-          }
-        );
-
-      } catch (e) {
-        log("CRASH di Setup: " + e.message);
-      }
+      createCanvas(windowWidth, windowHeight, WEBGL);
+      
+      // Setup AR
+      createARCanvas();
     }
 
     function draw() {
-      // Cek apakah background transparan jalan
+      // LUBANGI CANVAS BIAR KAMERA KELIHATAN
       clear();
 
-      // Indikator visual kalau draw loop jalan
-      // Kalau layar hitam total dan tulisan ini hilang, berarti WebGL mati
-      
-      // Update status AR Session
-      if (frameCount % 60 === 0) { // Update tiap detik biar gak spam
-        if (typeof xr !== 'undefined' && xr.session) {
-           // Jangan log terus-terusan, bikin penuh layar
-        }
-      }
-
-      // Render Kotak Merah (Jantung Aplikasi)
+      // Debugging: Kotak Merah Muter
       push();
-      translate(0, 0, -0.5);
+      translate(0, 0, -0.5); // 0.5 meter di depan mata
       rotateX(frameCount * 0.02);
       rotateY(frameCount * 0.02);
+      
       noStroke();
-      fill(255, 0, 0);
-      box(0.05); // Kotak 5cm
+      fill(255, 0, 0); // MERAH
+      box(0.1); // 10 cm
       pop();
-
-      // Render Kursi (Kalau ada)
-      if (chairModel) {
-        // Render semua kursi yang ditaruh
-        for (let obj of placedObjects) {
-          push();
-          translate(obj.x, obj.y, obj.z);
-          scale(0.05); 
-          rotateX(PI);
-          normalMaterial();
-          model(chairModel);
-          pop();
-        }
-      }
-    }
-
-    function mousePressed() {
-      if (typeof xr !== 'undefined' && xr.session) {
-        log("Layar disentuh! Menambahkan objek...");
-        let loc = createVector(0, 0, -1);
-        applyMatrix();
-        placedObjects.push(loc);
-      } else {
-        log("Sentuhan terdeteksi (Bukan Mode AR).");
-      }
     }
   </script>
 </body>
